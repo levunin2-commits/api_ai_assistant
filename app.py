@@ -1,4 +1,4 @@
-import gradio as gr
+from fastapi import FastAPI, UploadFile, File, HTTPException
 import torch
 import torch.nn.functional as F
 import cv2
@@ -152,7 +152,8 @@ def yolo_ocr_to_json(cls_label, yolo_results, image):
 
 
 # ========== 3. Основной пайплайн ==========
-def process_image(image):
+async def get_text(file: UploadFile = File(...)):
+
     image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     # 1. Классификация
@@ -171,17 +172,3 @@ def process_image(image):
     ocr_results = yolo_ocr_to_json(cls_label, results, rotated_image)
 
     return ocr_results
-
-# ========== 4. Gradio интерфейс ==========
-
-
-iface = gr.Interface(
-    fn=process_image,
-    inputs=gr.Image(type="numpy", label="Загрузите изображение"),
-    outputs=gr.JSON(label="Результат"),
-    title="🧠 OCR-сервис с классификацией и OBB",
-    description="MobileNet → YOLOv8 OBB → EasyOCR (кастомная модель)"
-)
-
-if __name__ == "__main__":
-    iface.launch(server_name="0.0.0.0", server_port=7861)
